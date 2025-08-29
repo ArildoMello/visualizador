@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Ocorrências 2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .chart-container {
+            width: 80%;
+            margin: 20px auto;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Visualizador de Ocorrências - 2025</h1>
+    
+    <div class="controls">
+        <label for="category">Categoria:</label>
+        <select id="category"></select>
+        
+        <label for="view">Visualizar por:</label>
+        <select id="view">
+            <option value="regions">Regiões</option>
+            <option value="times">Horários</option>
+            <option value="days">Dias da Semana</option>
+        </select>
+        
+        <label for="metric">Métrica:</label>
+        <select id="metric">
+            <option value="N° Ocorrência">N° Ocorrência</option>
+            <option value="Detidos Maiores">Detidos Maiores</option>
+            <option value="Menores">Menores</option>
+        </select>
+    </div>
+    
+    <div class="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <script>
+        const data = {"categories": ["CUMPRIMENTO DE MANDADO", "Cod. De Postura", "Crimes Ambientais", "Crimes contra a Administração Pública", "Crimes contra a Dignidade Sexual", "Crimes contra a Mulher (Maria da Penha)", "Crimes contra a Pessoa", "Crimes contra o Patrimônio", "Crimes de Trânsito", "Crimes estatuto do desarmamento", "Crimes maus tratos aos animais", "Crimes relacionados a Drogas", "Defesa Civil", "Ocorrências Administrativas", "Ocorrências não delituosas", "Outros"], "grouped_data": [{"Categoria": "CUMPRIMENTO DE MANDADO", "N° Ocorrência": 127, "Detidos Maiores": 130, "Menores": 1, "CENTRO": 39, "LESTE": 37, "OESTE": 15, "NORTE": 18, "SUL": 12, "DISTRITOS": 5, "SEM DADOS": 1, "MANHÃ": 31, "TARDE": 44, "NOITE": 26, "MADRUGADA": 26, "Domingo": 13, "Segunda-feira": 16, "Terça-feira": 22, "Quarta-feira": 20, "Quinta-feira": 19, "Sexta-feira": 26, "Sábado": 11}, {"Categoria": "Cod. De Postura", "N° Ocorrência": 125, "Detidos Maiores": 0, "Menores": 0, "CENTRO": 5, "LESTE": 21, "OESTE": 12, "NORTE": 37, "SUL": 40, "DISTRITOS": 1, "SEM DADOS": 9, "MANHÃ": 48, "TARDE": 47, "NOITE": 22, "MADRUGADA": 8, "Domingo": 19, "Segunda-feira": 14, "Terça-feira": 21, "Quarta-feira": 16, "Quinta-feira": 21, "Sexta-feira": 21, "Sábado": 13}, {"Categoria": "Crimes Ambientais", "N° Ocorrência": 379, "Detidos Maiores": 7, "Menores": 0, "CENTRO": 81, "LESTE": 65, "OESTE": 56, "NORTE": 86, "SUL": 75, "DISTRITOS": 7, "SEM DADOS": 9, "MANHÃ": 151, "TARDE": 137, "NOITE": 72, "MADRUGADA": 19, "Domingo": 54, "Segunda-feira": 64, "Terça-feira": 62, "Quarta-feira": 48, "Quinta-feira": 66, "Sexta-feira": 30, "Sábado": 55}, {"Categoria": "Crimes contra a Administração Pública", "N° Ocorrência": 40, "Detidos Maiores": 21, "Menores": 0, "CENTRO": 13, "LESTE": 6, "OESTE": 12, "NORTE": 4, "SUL": 4, "DISTRITOS": 0, "SEM DADOS": 1, "MANHÃ": 10, "TARDE": 12, "NOITE": 10, "MADRUGADA": 8, "Domingo": 7, "Segunda-feira": 5, "Terça-feira": 5, "Quarta-feira": 6, "Quinta-feira": 6, "Sexta-feira": 8, "Sábado": 3}, {"Categoria": "Crimes contra a Dignidade Sexual", "N° Ocorrência": 17, "Detidos Maiores": 10, "Menores": 0, "CENTRO": 11, "LESTE": 0, "OESTE": 2, "NORTE": 3, "SUL": 0, "DISTRITOS": 0, "SEM DADOS": 1, "MANHÃ": 6, "TARDE": 7, "NOITE": 3, "MADRUGADA": 1, "Domingo": 1, "Segunda-feira": 3, "Terça-feira": 0, "Quarta-feira": 2, "Quinta-feira": 3, "Sexta-feira": 2, "Sábado": 6}, {"Categoria": "Crimes contra a Mulher (Maria da Penha)", "N° Ocorrência": 412, "Detidos Maiores": 97, "Menores": 2, "CENTRO": 63, "LESTE": 70, "OESTE": 69, "NORTE": 127, "SUL": 61, "DISTRITOS": 5, "SEM DADOS": 17, "MANHÃ": 92, "TARDE": 120, "NOITE": 149, "MADRUGADA": 51, "Domingo": 72, "Segunda-feira": 58, "Terça-feira": 50, "Quarta-feira": 66, "Quinta-feira": 42, "Sexta-feira": 61, "Sábado": 63}, {"Categoria": "Crimes contra a Pessoa", "N° Ocorrência": 640, "Detidos Maiores": 75, "Menores": 10, "CENTRO": 186, "LESTE": 127, "OESTE": 106, "NORTE": 111, "SUL": 88, "DISTRITOS": 10, "SEM DADOS": 12, "MANHÃ": 127, "TARDE": 204, "NOITE": 215, "MADRUGADA": 94, "Domingo": 95, "Segunda-feira": 69, "Terça-feira": 83, "Quarta-feira": 89, "Quinta-feira": 80, "Sexta-feira": 106, "Sábado": 118}, {"Categoria": "Crimes contra o Patrimônio", "N° Ocorrência": 471, "Detidos Maiores": 71, "Menores": 7, "CENTRO": 126, "LESTE": 64, "OESTE": 57, "NORTE": 123, "SUL": 86, "DISTRITOS": 6, "SEM DADOS": 9, "MANHÃ": 126, "TARDE": 180, "NOITE": 108, "MADRUGADA": 57, "Domingo": 74, "Segunda-feira": 75, "Terça-feira": 54, "Quarta-feira": 68, "Quinta-feira": 56, "Sexta-feira": 63, "Sábado": 81}, {"Categoria": "Crimes de Trânsito", "N° Ocorrência": 1461, "Detidos Maiores": 64, "Menores": 2, "CENTRO": 585, "LESTE": 182, "OESTE": 148, "NORTE": 227, "SUL": 264, "DISTRITOS": 21, "SEM DADOS": 34, "MANHÃ": 372, "TARDE": 421, "NOITE": 452, "MADRUGADA": 216, "Domingo": 209, "Segunda-feira": 165, "Terça-feira": 184, "Quarta-feira": 165, "Quinta-feira": 258, "Sexta-feira": 223, "Sábado": 257}, {"Categoria": "Crimes estatuto do desarmamento", "N° Ocorrência": 9, "Detidos Maiores": 3, "Menores": 0, "CENTRO": 5, "LESTE": 1, "OESTE": 1, "NORTE": 1, "SUL": 0, "DISTRITOS": 0, "SEM DADOS": 1, "MANHÃ": 1, "TARDE": 2, "NOITE": 2, "MADRUGADA": 4, "Domingo": 1, "Segunda-feira": 2, "Terça-feira": 0, "Quarta-feira": 0, "Quinta-feira": 2, "Sexta-feira": 4, "Sábado": 0}, {"Categoria": "Crimes maus tratos aos animais", "N° Ocorrência": 46, "Detidos Maiores": 3, "Menores": 0, "CENTRO": 2, "LESTE": 10, "OESTE": 14, "NORTE": 11, "SUL": 9, "DISTRITOS": 0, "SEM DADOS": 0, "MANHÃ": 21, "TARDE": 23, "NOITE": 1, "MADRUGADA": 1, "Domingo": 9, "Segunda-feira": 4, "Terça-feira": 4, "Quarta-feira": 9, "Quinta-feira": 4, "Sexta-feira": 7, "Sábado": 9}, {"Categoria": "Crimes relacionados a Drogas", "N° Ocorrência": 386, "Detidos Maiores": 190, "Menores": 27, "CENTRO": 57, "LESTE": 81, "OESTE": 36, "NORTE": 175, "SUL": 29, "DISTRITOS": 1, "SEM DADOS": 7, "MANHÃ": 103, "TARDE": 188, "NOITE": 70, "MADRUGADA": 25, "Domingo": 34, "Segunda-feira": 66, "Terça-feira": 58, "Quarta-feira": 69, "Quinta-feira": 60, "Sexta-feira": 59, "Sábado": 40}, {"Categoria": "Defesa Civil", "N° Ocorrência": 65, "Detidos Maiores": 0, "Menores": 0, "CENTRO": 10, "LESTE": 3, "OESTE": 4, "NORTE": 32, "SUL": 10, "DISTRITOS": 2, "SEM DADOS": 4, "MANHÃ": 18, "TARDE": 30, "NOITE": 15, "MADRUGADA": 2, "Domingo": 2, "Segunda-feira": 7, "Terça-feira": 10, "Quarta-feira": 10, "Quinta-feira": 22, "Sexta-feira": 6, "Sábado": 8}, {"Categoria": "Ocorrências Administrativas", "N° Ocorrência": 2487, "Detidos Maiores": 4, "Menores": 0, "CENTRO": 792, "LESTE": 394, "OESTE": 359, "NORTE": 554, "SUL": 302, "DISTRITOS": 35, "SEM DADOS": 51, "MANHÃ": 676, "TARDE": 729, "NOITE": 754, "MADRUGADA": 327, "Domingo": 306, "Segunda-feira": 357, "Terça-feira": 317, "Quarta-feira": 381, "Quinta-feira": 396, "Sexta-feira": 364, "Sábado": 366}, {"Categoria": "Ocorrências não delituosas", "N° Ocorrência": 3805, "Detidos Maiores": 1, "Menores": 0, "CENTRO": 1348, "LESTE": 835, "OESTE": 454, "NORTE": 634, "SUL": 328, "DISTRITOS": 33, "SEM DADOS": 173, "MANHÃ": 929, "TARDE": 956, "NOITE": 976, "MADRUGADA": 944, "Domingo": 616, "Segunda-feira": 621, "Terça-feira": 465, "Quarta-feira": 500, "Quinta-feira": 529, "Sexta-feira": 438, "Sábado": 636}, {"Categoria": "Outros", "N° Ocorrência": 5066, "Detidos Maiores": 2, "Menores": 0, "CENTRO": 1431, "LESTE": 653, "OESTE": 397, "NORTE": 687, "SUL": 487, "DISTRITOS": 57, "SEM DADOS": 1354, "MANHÃ": 1464, "TARDE": 1155, "NOITE": 1905, "MADRUGADA": 542, "Domingo": 756, "Segunda-feira": 623, "Terça-feira": 616, "Quarta-feira": 650, "Quinta-feira": 708, "Sexta-feira": 782, "Sábado": 931}], "regions": ["CENTRO", "LESTE", "OESTE", "NORTE", "SUL", "DISTRITOS", "SEM DADOS"], "times": ["MANHÃ", "TARDE", "NOITE", "MADRUGADA"], "days": ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"]};
+
+        const categorySelect = document.getElementById('category');
+        const viewSelect = document.getElementById('view');
+        const metricSelect = document.getElementById('metric');
+        let chart;
+
+        // Populate categories
+        data.categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            categorySelect.appendChild(option);
+        });
+
+        function updateChart() {
+            const selectedCategory = categorySelect.value;
+            const selectedView = viewSelect.value;
+            const selectedMetric = metricSelect.value;
+
+            const categoryData = data.grouped_data.find(item => item.Categoria === selectedCategory);
+
+            if (!categoryData) return;
+
+            let labels = [];
+            let values = [];
+
+            if (selectedView === 'regions') {
+                labels = data.regions;
+                values = labels.map(label => categoryData[label] || 0);
+            } else if (selectedView === 'times') {
+                labels = data.times;
+                values = labels.map(label => categoryData[label] || 0);
+            } else if (selectedView === 'days') {
+                labels = data.days;
+                values = labels.map(label => categoryData[label] || 0);
+            }
+
+            const ctx = document.getElementById('myChart').getContext('2d');
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: selectedMetric,
+                        data: values,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    responsive: true
+                }
+            });
+        }
+
+        categorySelect.addEventListener('change', updateChart);
+        viewSelect.addEventListener('change', updateChart);
+        metricSelect.addEventListener('change', updateChart);
+
+        // Initial update
+        updateChart();
+    </script>
+</body>
+</html>
