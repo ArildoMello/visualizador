@@ -1,138 +1,380 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualizador de Ocorrências 2025</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-        }
-        h1 {
-            text-align: center;
-        }
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        select {
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .chart-container {
-            width: 80%;
-            margin: 20px auto;
-            background-color: white;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            border-radius: 10px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GML - Ocorrências 2025</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+  <style>
+    :root{
+      --bg1:#0a0f1f; --bg2:#0d1533; --card:#111a3a;
+      --txt:#eaf1ff; --muted:#a9b7e3; --line:#22306b;
+      --a:#00e6ff; --b:#2f7bff; --c:#7c4dff; --ok:#00d69d; --warn:#ffb020; --err:#ff5577;
+      --shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.03);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Ubuntu,Arial; color:var(--txt);
+      background: radial-gradient(1200px 800px at 15% -10%, rgba(47,123,255,.25), transparent 60%),
+                  radial-gradient(900px 600px at 85% 110%, rgba(124,77,255,.18), transparent 60%),
+                  linear-gradient(180deg, var(--bg2), var(--bg1));
+      padding:24px;
+    }
+    .wrap{max-width:1200px;margin:0 auto}
+    .title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+    h1{
+      font-size: clamp(20px, 2.6vw, 34px);
+      margin:0; letter-spacing:.5px; font-weight:900;
+      background: linear-gradient(90deg, var(--a), var(--b));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      text-shadow: 0 0 18px rgba(0,230,255,.24);
+    }
+    .badge{font-size:12px;color:var(--muted);opacity:.9}
+
+    .panel{background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow)}
+    .controls{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;padding:16px}
+    .control{grid-column: span 4; min-width:200px}
+    .control label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px 6px}
+    select{width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:#0d1635; color:var(--txt); outline:none; box-shadow: inset 0 0 0 1px rgba(0,230,255,.08)}
+    select:focus{border-color:var(--b); box-shadow:0 0 0 3px rgba(47,123,255,.25)}
+
+    .dash{margin-top:18px; padding:16px}
+    .chartBox{position:relative; height:min(65vh,680px);}
+
+    .grid{margin-top:16px; border-top:1px dashed var(--line); display:grid; grid-template-columns:repeat(12,1fr); gap:12px; padding:16px}
+    .card{grid-column: span 4; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px}
+    .card h3{margin:0 0 6px; font-size:13px; color:var(--muted)}
+    .card .v{font-size:24px; font-weight:800}
+
+    /* Esconde qualquer log interno */
+    #log{display:none}
+
+    @media (max-width: 900px){ .control{grid-column: span 12} .card{grid-column: span 12} }
+  </style>
 </head>
 <body>
-    <h1>Visualizador de Ocorrências - 2025</h1>
-    
-    <div class="controls">
-        <label for="category">Categoria:</label>
-        <select id="category"></select>
-        
-        <label for="view">Visualizar por:</label>
-        <select id="view">
+  <div class="wrap">
+    <div class="title">
+      <h1>Guarda Municipal de Ocorrências — 2025</h1>
+      <span class="badge" id="statusText">Carregando…</span>
+    </div>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control">
+          <label>Categorias</label>
+          <select id="category"></select>
+        </div>
+        <div class="control">
+          <label>Visualizar por</label>
+          <select id="view">
             <option value="regions">Regiões</option>
             <option value="times">Horários</option>
             <option value="days">Dias da Semana</option>
-        </select>
-        
-        <label for="metric">Métrica:</label>
-        <select id="metric">
+          </select>
+        </div>
+        <div class="control">
+          <label>Métrica</label>
+          <select id="metric">
             <option value="N° Ocorrência">N° Ocorrência</option>
             <option value="Detidos Maiores">Detidos Maiores</option>
             <option value="Menores">Menores</option>
-        </select>
+          </select>
+        </div>
+      </div>
+
+      <div class="dash">
+        <div class="chartBox panel">
+          <canvas id="chart"></canvas>
+        </div>
+        <div class="grid">
+          <div class="card"><h3>Total (categoria)</h3><div class="v" id="kpiTotal">—</div></div>
+          <div class="card"><h3>Pico (rótulo)</h3><div class="v" id="kpiPeak">—</div></div>
+          <div class="card"><h3>Última atualização</h3><div class="v" id="kpiAt">—</div></div>
+        </div>
+        <div class="status" id="log"></div>
+      </div>
     </div>
-    
-    <div class="chart-container">
-        <canvas id="myChart"></canvas>
-    </div>
+  </div>
 
-    <script>
-        const data = {"categories": ["CUMPRIMENTO DE MANDADO", "Cod. De Postura", "Crimes Ambientais", "Crimes contra a Administração Pública", "Crimes contra a Dignidade Sexual", "Crimes contra a Mulher (Maria da Penha)", "Crimes contra a Pessoa", "Crimes contra o Patrimônio", "Crimes de Trânsito", "Crimes estatuto do desarmamento", "Crimes maus tratos aos animais", "Crimes relacionados a Drogas", "Defesa Civil", "Ocorrências Administrativas", "Ocorrências não delituosas", "Outros"], "grouped_data": [{"Categoria": "CUMPRIMENTO DE MANDADO", "N° Ocorrência": 127, "Detidos Maiores": 130, "Menores": 1, "CENTRO": 39, "LESTE": 37, "OESTE": 15, "NORTE": 18, "SUL": 12, "DISTRITOS": 5, "SEM DADOS": 1, "MANHÃ": 31, "TARDE": 44, "NOITE": 26, "MADRUGADA": 26, "Domingo": 13, "Segunda-feira": 16, "Terça-feira": 22, "Quarta-feira": 20, "Quinta-feira": 19, "Sexta-feira": 26, "Sábado": 11}, {"Categoria": "Cod. De Postura", "N° Ocorrência": 125, "Detidos Maiores": 0, "Menores": 0, "CENTRO": 5, "LESTE": 21, "OESTE": 12, "NORTE": 37, "SUL": 40, "DISTRITOS": 1, "SEM DADOS": 9, "MANHÃ": 48, "TARDE": 47, "NOITE": 22, "MADRUGADA": 8, "Domingo": 19, "Segunda-feira": 14, "Terça-feira": 21, "Quarta-feira": 16, "Quinta-feira": 21, "Sexta-feira": 21, "Sábado": 13}, {"Categoria": "Crimes Ambientais", "N° Ocorrência": 379, "Detidos Maiores": 7, "Menores": 0, "CENTRO": 81, "LESTE": 65, "OESTE": 56, "NORTE": 86, "SUL": 75, "DISTRITOS": 7, "SEM DADOS": 9, "MANHÃ": 151, "TARDE": 137, "NOITE": 72, "MADRUGADA": 19, "Domingo": 54, "Segunda-feira": 64, "Terça-feira": 62, "Quarta-feira": 48, "Quinta-feira": 66, "Sexta-feira": 30, "Sábado": 55}, {"Categoria": "Crimes contra a Administração Pública", "N° Ocorrência": 40, "Detidos Maiores": 21, "Menores": 0, "CENTRO": 13, "LESTE": 6, "OESTE": 12, "NORTE": 4, "SUL": 4, "DISTRITOS": 0, "SEM DADOS": 1, "MANHÃ": 10, "TARDE": 12, "NOITE": 10, "MADRUGADA": 8, "Domingo": 7, "Segunda-feira": 5, "Terça-feira": 5, "Quarta-feira": 6, "Quinta-feira": 6, "Sexta-feira": 8, "Sábado": 3}, {"Categoria": "Crimes contra a Dignidade Sexual", "N° Ocorrência": 17, "Detidos Maiores": 10, "Menores": 0, "CENTRO": 11, "LESTE": 0, "OESTE": 2, "NORTE": 3, "SUL": 0, "DISTRITOS": 0, "SEM DADOS": 1, "MANHÃ": 6, "TARDE": 7, "NOITE": 3, "MADRUGADA": 1, "Domingo": 1, "Segunda-feira": 3, "Terça-feira": 0, "Quarta-feira": 2, "Quinta-feira": 3, "Sexta-feira": 2, "Sábado": 6}, {"Categoria": "Crimes contra a Mulher (Maria da Penha)", "N° Ocorrência": 412, "Detidos Maiores": 97, "Menores": 2, "CENTRO": 63, "LESTE": 70, "OESTE": 69, "NORTE": 127, "SUL": 61, "DISTRITOS": 5, "SEM DADOS": 17, "MANHÃ": 92, "TARDE": 120, "NOITE": 149, "MADRUGADA": 51, "Domingo": 72, "Segunda-feira": 58, "Terça-feira": 50, "Quarta-feira": 66, "Quinta-feira": 42, "Sexta-feira": 61, "Sábado": 63}, {"Categoria": "Crimes contra a Pessoa", "N° Ocorrência": 640, "Detidos Maiores": 75, "Menores": 10, "CENTRO": 186, "LESTE": 127, "OESTE": 106, "NORTE": 111, "SUL": 88, "DISTRITOS": 10, "SEM DADOS": 12, "MANHÃ": 127, "TARDE": 204, "NOITE": 215, "MADRUGADA": 94, "Domingo": 95, "Segunda-feira": 69, "Terça-feira": 83, "Quarta-feira": 89, "Quinta-feira": 80, "Sexta-feira": 106, "Sábado": 118}, {"Categoria": "Crimes contra o Patrimônio", "N° Ocorrência": 471, "Detidos Maiores": 71, "Menores": 7, "CENTRO": 126, "LESTE": 64, "OESTE": 57, "NORTE": 123, "SUL": 86, "DISTRITOS": 6, "SEM DADOS": 9, "MANHÃ": 126, "TARDE": 180, "NOITE": 108, "MADRUGADA": 57, "Domingo": 74, "Segunda-feira": 75, "Terça-feira": 54, "Quarta-feira": 68, "Quinta-feira": 56, "Sexta-feira": 63, "Sábado": 81}, {"Categoria": "Crimes de Trânsito", "N° Ocorrência": 1461, "Detidos Maiores": 64, "Menores": 2, "CENTRO": 585, "LESTE": 182, "OESTE": 148, "NORTE": 227, "SUL": 264, "DISTRITOS": 21, "SEM DADOS": 34, "MANHÃ": 372, "TARDE": 421, "NOITE": 452, "MADRUGADA": 216, "Domingo": 209, "Segunda-feira": 165, "Terça-feira": 184, "Quarta-feira": 165, "Quinta-feira": 258, "Sexta-feira": 223, "Sábado": 257}, {"Categoria": "Crimes estatuto do desarmamento", "N° Ocorrência": 9, "Detidos Maiores": 3, "Menores": 0, "CENTRO": 5, "LESTE": 1, "OESTE": 1, "NORTE": 1, "SUL": 0, "DISTRITOS": 0, "SEM DADOS": 1, "MANHÃ": 1, "TARDE": 2, "NOITE": 2, "MADRUGADA": 4, "Domingo": 1, "Segunda-feira": 2, "Terça-feira": 0, "Quarta-feira": 0, "Quinta-feira": 2, "Sexta-feira": 4, "Sábado": 0}, {"Categoria": "Crimes maus tratos aos animais", "N° Ocorrência": 46, "Detidos Maiores": 3, "Menores": 0, "CENTRO": 2, "LESTE": 10, "OESTE": 14, "NORTE": 11, "SUL": 9, "DISTRITOS": 0, "SEM DADOS": 0, "MANHÃ": 21, "TARDE": 23, "NOITE": 1, "MADRUGADA": 1, "Domingo": 9, "Segunda-feira": 4, "Terça-feira": 4, "Quarta-feira": 9, "Quinta-feira": 4, "Sexta-feira": 7, "Sábado": 9}, {"Categoria": "Crimes relacionados a Drogas", "N° Ocorrência": 386, "Detidos Maiores": 190, "Menores": 27, "CENTRO": 57, "LESTE": 81, "OESTE": 36, "NORTE": 175, "SUL": 29, "DISTRITOS": 1, "SEM DADOS": 7, "MANHÃ": 103, "TARDE": 188, "NOITE": 70, "MADRUGADA": 25, "Domingo": 34, "Segunda-feira": 66, "Terça-feira": 58, "Quarta-feira": 69, "Quinta-feira": 60, "Sexta-feira": 59, "Sábado": 40}, {"Categoria": "Defesa Civil", "N° Ocorrência": 65, "Detidos Maiores": 0, "Menores": 0, "CENTRO": 10, "LESTE": 3, "OESTE": 4, "NORTE": 32, "SUL": 10, "DISTRITOS": 2, "SEM DADOS": 4, "MANHÃ": 18, "TARDE": 30, "NOITE": 15, "MADRUGADA": 2, "Domingo": 2, "Segunda-feira": 7, "Terça-feira": 10, "Quarta-feira": 10, "Quinta-feira": 22, "Sexta-feira": 6, "Sábado": 8}, {"Categoria": "Ocorrências Administrativas", "N° Ocorrência": 2487, "Detidos Maiores": 4, "Menores": 0, "CENTRO": 792, "LESTE": 394, "OESTE": 359, "NORTE": 554, "SUL": 302, "DISTRITOS": 35, "SEM DADOS": 51, "MANHÃ": 676, "TARDE": 729, "NOITE": 754, "MADRUGADA": 327, "Domingo": 306, "Segunda-feira": 357, "Terça-feira": 317, "Quarta-feira": 381, "Quinta-feira": 396, "Sexta-feira": 364, "Sábado": 366}, {"Categoria": "Ocorrências não delituosas", "N° Ocorrência": 3805, "Detidos Maiores": 1, "Menores": 0, "CENTRO": 1348, "LESTE": 835, "OESTE": 454, "NORTE": 634, "SUL": 328, "DISTRITOS": 33, "SEM DADOS": 173, "MANHÃ": 929, "TARDE": 956, "NOITE": 976, "MADRUGADA": 944, "Domingo": 616, "Segunda-feira": 621, "Terça-feira": 465, "Quarta-feira": 500, "Quinta-feira": 529, "Sexta-feira": 438, "Sábado": 636}, {"Categoria": "Outros", "N° Ocorrência": 5066, "Detidos Maiores": 2, "Menores": 0, "CENTRO": 1431, "LESTE": 653, "OESTE": 397, "NORTE": 687, "SUL": 487, "DISTRITOS": 57, "SEM DADOS": 1354, "MANHÃ": 1464, "TARDE": 1155, "NOITE": 1905, "MADRUGADA": 542, "Domingo": 756, "Segunda-feira": 623, "Terça-feira": 616, "Quarta-feira": 650, "Quinta-feira": 708, "Sexta-feira": 782, "Sábado": 931}], "regions": ["CENTRO", "LESTE", "OESTE", "NORTE", "SUL", "DISTRITOS", "SEM DADOS"], "times": ["MANHÃ", "TARDE", "NOITE", "MADRUGADA"], "days": ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"]};
+  <script>
+  // Configurável: ID da planilha e gid da aba
+  const SHEET_ID = '1rO6VZbiBqMpHW8oyte4irNPGZPL1zUif1mftR4tYtUM';
+  const GID = '0';
+  const CSV_URL = `https://corsproxy.io/?${encodeURIComponent(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`)}`;
 
-        const categorySelect = document.getElementById('category');
-        const viewSelect = document.getElementById('view');
-        const metricSelect = document.getElementById('metric');
-        let chart;
+  window.addEventListener('DOMContentLoaded', () => {
+    const els = {
+      category: document.getElementById('category'),
+      view: document.getElementById('view'),
+      metric: document.getElementById('metric'),
+      status: document.getElementById('statusText'),
+      log: document.getElementById('log'),
+      kpiTotal: document.getElementById('kpiTotal'),
+      kpiPeak: document.getElementById('kpiPeak'),
+      kpiAt: document.getElementById('kpiAt'),
+      chart: document.getElementById('chart'),
+    };
 
-        // Populate categories
-        data.categories.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat;
-            option.textContent = cat;
-            categorySelect.appendChild(option);
-        });
+    let CHART;
+    let DATA = { headers: [], rows: [], categories: [], labels: { regions: [], times: [], days: [] } };
 
-        function updateChart() {
-            const selectedCategory = categorySelect.value;
-            const selectedView = viewSelect.value;
-            const selectedMetric = metricSelect.value;
+    // Cabeçalhos reais da sua planilha
+    const HEADER_MAP = {
+      tipo: ['Tipo final','Tipo Final','Tipo'],
+      categoria: ['Categoria'],
+      ocorrencias: ['N° Ocorrência','N° Ocorrencia','Nº Ocorrência','Numero Ocorrencia'],
+      maiores: ['Detidos Maiores','Maiores'],
+      menores: ['Menores'],
+      regioes: ['CENTRO','LESTE','OESTE','NORTE','SUL','DISTRITOS','SEM DADOS'],
+      periodos: ['MANHÃ','TARDE','NOITE','MADRUGADA'],
+      dias: ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado']
+    };
 
-            const categoryData = data.grouped_data.find(item => item.Categoria === selectedCategory);
+    const setStatus = (t) => els.status.textContent = t;
 
-            if (!categoryData) return;
-
-            let labels = [];
-            let values = [];
-
-            if (selectedView === 'regions') {
-                labels = data.regions;
-                values = labels.map(label => categoryData[label] || 0);
-            } else if (selectedView === 'times') {
-                labels = data.times;
-                values = labels.map(label => categoryData[label] || 0);
-            } else if (selectedView === 'days') {
-                labels = data.days;
-                values = labels.map(label => categoryData[label] || 0);
-            }
-
-            const ctx = document.getElementById('myChart').getContext('2d');
-            if (chart) chart.destroy();
-
-            chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: selectedMetric,
-                        data: values,
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    },
-                    responsive: true
-                }
-            });
+    function csvToMatrix(text){
+      if (!text.trim()) throw new Error('CSV vazio ou inválido');
+      const lines = text.replace(/\r/g,'').split(/\n+/).filter(Boolean);
+      return lines.map(l => {
+        const out = []; let cur = ''; let q = false;
+        for (let i=0;i<l.length;i++){
+          const ch = l[i];
+          if (ch==='"') { q = !q; continue; }
+          if (ch===',' && !q) { out.push(cur); cur=''; continue; }
+          cur += ch;
         }
+        out.push(cur);
+        return out.map(s=>s.trim());
+      });
+    }
 
-        categorySelect.addEventListener('change', updateChart);
-        viewSelect.addEventListener('change', updateChart);
-        metricSelect.addEventListener('change', updateChart);
+    const coerceNumber = (v) => {
+      if (v == null || v === '') return 0;
+      const n = Number(String(v).replace(/\./g,'').replace(',', '.'));
+      if (!Number.isFinite(n)) {
+        console.warn(`Valor inválido encontrado: "${v}"`);
+        return 0;
+      }
+      return n;
+    };
 
-        // Initial update
-        updateChart();
-    </script>
+    function findIndex(headers, names){
+      for (const n of names){ const i = headers.indexOf(n); if (i !== -1) return i; }
+      return -1;
+    }
+
+    function normalizeData(matrix){
+      if (!matrix.length) throw new Error('Matriz vazia');
+      const headers = matrix[0].map(h => String(h).trim());
+      const rowsArr = matrix.slice(1);
+
+      const idx = {
+        tipo: findIndex(headers, HEADER_MAP.tipo),
+        categoria: findIndex(headers, HEADER_MAP.categoria),
+        ocorrencias: findIndex(headers, HEADER_MAP.ocorrencias),
+        maiores: findIndex(headers, HEADER_MAP.maiores),
+        menores: findIndex(headers, HEADER_MAP.menores)
+      };
+      const idxReg = HEADER_MAP.regioes.map(h => headers.indexOf(h));
+      const idxPer = HEADER_MAP.periodos.map(h => headers.indexOf(h));
+      const idxDia = HEADER_MAP.dias.map(h => headers.indexOf(h));
+
+      // Mapear linhas brutas
+      const rawRows = rowsArr.map(r => {
+        const o = {};
+        o['Categoria'] = r[idx.categoria] || '';
+        o['N° Ocorrência'] = coerceNumber(r[idx.ocorrencias]);
+        o['Detidos Maiores'] = coerceNumber(r[idx.maiores]);
+        o['Menores'] = coerceNumber(r[idx.menores]);
+        HEADER_MAP.regioes.forEach((h, i) => { const j = idxReg[i]; o[h] = coerceNumber(j >= 0 ? r[j] : 0); });
+        HEADER_MAP.periodos.forEach((h, i) => { const j = idxPer[i]; o[h] = coerceNumber(j >= 0 ? r[j] : 0); });
+        HEADER_MAP.dias.forEach((h, i) => { const j = idxDia[i]; o[h] = coerceNumber(j >= 0 ? r[j] : 0); });
+        return o;
+      }).filter(o => o['Categoria']); // Filtrar apenas linhas com categoria
+
+      // Agregar por categoria
+      const grouped = {};
+      rawRows.forEach(r => {
+        const cat = r['Categoria'];
+        if (!grouped[cat]) {
+          grouped[cat] = {
+            'Categoria': cat,
+            'N° Ocorrência': 0,
+            'Detidos Maiores': 0,
+            'Menores': 0
+          };
+          HEADER_MAP.regioes.forEach(h => grouped[cat][h] = 0);
+          HEADER_MAP.periodos.forEach(h => grouped[cat][h] = 0);
+          HEADER_MAP.dias.forEach(h => grouped[cat][h] = 0);
+        }
+        grouped[cat]['N° Ocorrência'] += r['N° Ocorrência'];
+        grouped[cat]['Detidos Maiores'] += r['Detidos Maiores'];
+        grouped[cat]['Menores'] += r['Menores'];
+        HEADER_MAP.regioes.forEach(h => grouped[cat][h] += r[h]);
+        HEADER_MAP.periodos.forEach(h => grouped[cat][h] += r[h]);
+        HEADER_MAP.dias.forEach(h => grouped[cat][h] += r[h]);
+      });
+
+      const categories = Object.keys(grouped);
+      DATA.headers = headers;
+      DATA.rows = Object.values(grouped);
+      DATA.categories = categories;
+      DATA.labels = {
+        regions: HEADER_MAP.regioes,
+        times: HEADER_MAP.periodos,
+        days: HEADER_MAP.dias
+      };
+    }
+
+    async function fetchCSV(){
+      try {
+        const res = await fetch(CSV_URL, { cache: 'no-store' });
+        if (!res.ok) {
+          if (res.status === 403) throw new Error('Acesso negado à planilha. Verifique se ela está pública.');
+          throw new Error(`Falha ao baixar CSV (status ${res.status}).`);
+        }
+        const text = await res.text();
+        if (!text.trim()) throw new Error('CSV vazio retornado pela planilha.');
+        return csvToMatrix(text);
+      } catch (err) {
+        throw new Error(`Erro ao acessar a planilha: ${err.message}. Verifique as permissões ou use um backend próprio.`);
+      }
+    }
+
+    async function loadAndDraw(){
+      setStatus('Carregando…');
+      try{
+        const matrix = await fetchCSV();
+        normalizeData(matrix);
+        hydrateUI();
+        draw();
+        setStatus('Dados carregados');
+        els.kpiAt.textContent = new Date().toLocaleString('pt-BR');
+      }catch(err){
+        setStatus('Erro ao carregar');
+        console.error(err);
+        alert(`Erro ao carregar dados: ${err.message}`);
+      }
+    }
+
+    function hydrateUI(){
+      const prevCat = els.category.value;
+      els.category.innerHTML = '';
+      if (DATA.categories.length === 0) {
+        els.category.innerHTML = '<option value="">Nenhuma categoria disponível</option>';
+        return;
+      }
+      DATA.categories.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        els.category.appendChild(opt);
+      });
+      if (prevCat && DATA.categories.includes(prevCat)) els.category.value = prevCat;
+      else if (DATA.categories.length) els.category.value = DATA.categories[0];
+      draw(); // Garantir que o gráfico seja desenhado após hidratação
+    }
+
+    function getSeries(){
+      const category = els.category.value;
+      const view = els.view.value;
+      const metric = els.metric.value;
+      const row = DATA.rows.find(r => r['Categoria'] === category) || {};
+      let labels, values;
+      if (metric === 'N° Ocorrência') {
+        labels = DATA.labels[view] || [];
+        values = labels.map(label => coerceNumber(row[label]));
+      } else {
+        labels = ['Total'];
+        values = [coerceNumber(row[metric])];
+      }
+      return { labels, values, category, metric };
+    }
+
+    // Função de debounce para otimizar redimensionamento
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    function draw(){
+      const { labels, values, category, metric } = getSeries();
+      if (!labels.length || !values.length) {
+        els.kpiTotal.textContent = '—';
+        els.kpiPeak.textContent = '—';
+        if (CHART) CHART.destroy();
+        return;
+      }
+      const isDistributed = labels.length > 1;
+      const total = values.reduce((a, b) => a + b, 0);
+      els.kpiTotal.textContent = total.toLocaleString('pt-BR');
+      if (isDistributed) {
+        const maxV = Math.max(...values);
+        const maxI = values.indexOf(maxV);
+        els.kpiPeak.textContent = `${labels[maxI]}: ${maxV.toLocaleString('pt-BR')}`;
+      } else {
+        els.kpiPeak.textContent = '—';
+      }
+
+      const ctx = els.chart.getContext('2d');
+      if (CHART) CHART.destroy();
+      CHART = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: metric, data: values, borderWidth: 2, borderColor: 'rgba(0,230,255,.95)', backgroundColor: 'rgba(47,123,255,.20)', hoverBackgroundColor: 'rgba(124,77,255,.35)' }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 400 },
+          plugins: {
+            legend: { labels: { color: '#cfe6ff' } },
+            title: { display: true, text: `${metric} — ${category || 'Nenhuma categoria'}`, color: '#eaf1ff', font: { weight: '800', size: 16 } },
+            tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('pt-BR')}` } }
+          },
+          scales: {
+            x: { ticks: { color: '#cfe6ff' }, grid: { color: 'rgba(255,255,255,.05)' } },
+            y: { beginAtZero: true, ticks: { color: '#cfe6ff' }, grid: { color: 'rgba(255,255,255,.06)' }, title: { display: true, text: 'Quantidade', color: '#cfe6ff' } }
+          },
+          devicePixelRatio: window.devicePixelRatio // Otimização para telas de alta densidade
+        }
+      });
+    }
+
+    const debouncedDraw = debounce(draw, 100);
+
+    async function onChange(){
+      try{
+        const matrix = await fetchCSV();
+        normalizeData(matrix);
+        hydrateUI();
+        debouncedDraw();
+        els.kpiAt.textContent = new Date().toLocaleString('pt-BR');
+      }catch(err){
+        console.error(err);
+        setStatus('Erro ao atualizar');
+        alert(`Erro ao atualizar dados: ${err.message}`);
+      }
+    }
+
+    els.category.addEventListener('change', onChange);
+    els.view.addEventListener('change', onChange);
+    els.metric.addEventListener('change', onChange);
+    window.addEventListener('resize', debouncedDraw); // Adiciona debounce ao redimensionamento
+
+    // Carga inicial automática
+    loadAndDraw();
+  });
+  </script>
 </body>
 </html>
